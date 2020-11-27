@@ -5,9 +5,12 @@ import helmet from "helmet";
 import { routeBuilder } from "./routes";
 import * as config from './config';
 import { doHealthCheck } from "./utils/healthCheck";
+import { runMigrations } from "./data";
+
+// get the database to the latest state
+runMigrations();
 
 const app = express();
-
 app.use(express.json()) // for parsing application/json
 app.use(express.urlencoded({ extended: true })) // for parsing application/x-www-form-urlencoded
 app.use(fileupload());

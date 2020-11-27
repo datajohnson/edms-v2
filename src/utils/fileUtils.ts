@@ -1,38 +1,68 @@
-const fs = require("fs");
-var archiver = require('archiver');
+import { createWriteStream, createReadStream, existsSync, mkdirSync } from "fs";
+import { createCipheriv, createDecipheriv } from "crypto";
+import { Readable, Writable } from "stream";
+import { ENCRYPTION_KEY, ENCRYPTION_IV } from "../config";
 
-archiver.registerFormat('zip-encryptable', require('archiver-zip-encryptable'));
+const algorithm = 'aes-256-ctr';
+const key = ENCRYPTION_KEY;
+const iv = Buffer.from(ENCRYPTION_IV).slice(0, 16);
 
-export async function saveFile(name: string, originalFilename: string, content: Buffer): Promise<boolean> {
 
-    console.log(name, content);
+export function createDirectory(path: string): void {
+    console.log("TRYING TO CREATE DIRECTORY: " + path)
+    mkdirSync(path, { recursive: true });
+}
+
+export async function writeEncryptedFile(filename: string, content: Buffer): Promise<string> {
+    let cipher = createCipheriv(algorithm, Buffer.from(key), iv);
+
+    console.log(filename, content)
 
     return new Promise(async (resolve, reject) => {
+        let reader = new Readable();
+        reader._read = () => { }; // the read function is irrelevant, so dummy it in
+        reader.push(content);
+        reader.push(null);
 
-        await fs.writeFile("./" + originalFilename, content, (err: any) => {
-            if (err) {
-                console.error("ERROR WRITING FILE", err)
-                return reject("File not written")
-            }
-            else {
-                var output = fs.createWriteStream(__dirname + '/example.zip');
-                var archive = archiver('zip-encryptable', {
-                    zlib: { level: 9 },
-                    forceLocalTime: true, 
-                    password: 'test'
-                });
-                archive.pipe(output);
+        console.log("TRYING TO WRITE LOG TO : ", filename)
 
-                archive.append(content, { name: originalFilename });
+        let output = createWriteStream(filename);
 
-                archive.finalize();
+        await reader.pipe(cipher).pipe(output)
+            .on("finish", () => {
+                console.log("IN FINISH")
+                resolve(filename);
+            })
+            .on("error", () => {
+                console.error("ERROR ENCRYPTING FILE")
+                reject("Trouble writing the encrypted file.")
+            });
+    });
+};
 
+export async function readEncryptedFile(filename: string): Promise<Buffer> {
+    return new Promise(async (resolve, reject) => {
 
+        if (!existsSync(filename))
+            return reject("File does not exist");
 
-                return resolve(true);
+        let decipher = createDecipheriv(algorithm, Buffer.from(key), iv);
+        let input = createReadStream(filename);
+        let output = createWriteStream(filename + ".new.txt");
+        let writer = new Writable();
 
+        let buff = new Array<Uint8Array>();
 
-            }
-        });
+        input.pipe(decipher)
+            .on("data", (data) => {
+                buff.push(data);
+            })
+            .on("end", () => {
+                resolve(Buffer.concat(buff));
+            })
+            .on("error", () => {
+                console.error("ERROR DECRYPTING FILE")
+                reject("Trouble reading the encrypted file.")
+            });
     });
 }
