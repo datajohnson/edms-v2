@@ -1,8 +1,8 @@
 import { FILE_PATH } from "../../config";
 import { CollectedFile, CollectedFileType } from "../models/collected-file";
 import { existsSync } from "fs";
-import { join, parse } from "path";
-import { readEncryptedFile } from "../../utils/fileUtils";
+import { join } from "path";
+import { deleteDirectory, readEncryptedFile } from "../../utils/fileUtils";
 import { getDatabaseConnection } from "../index";
 import { CollectorLog, CollectorStatus } from "../models";
 
@@ -26,8 +26,21 @@ export class CollectorLogService {
     }
 
     static async updateStatus(log: CollectorLog, status: CollectorStatus): Promise<void> {
+        console.log(`Marking submission ${log.id} as ${CollectorStatus.PROCESSED}`);
+
         let knex = getDatabaseConnection();
         return knex.raw(`UPDATE collector_log SET status = '${status}' WHERE id = ${log.id}`);
+    }
+
+    static async completeProcessing(log: CollectorLog): Promise<void> {
+        let serviceName = log.service_name;
+        let id = log.id || 0;
+
+        // delete the files
+        let filePath = join(FILE_PATH, serviceName, id.toString());
+        deleteDirectory(filePath);
+
+        await this.updateStatus(log, CollectorStatus.PROCESSED);
     }
 
     static async getAll(): Promise<CollectorLog[]> {
@@ -35,9 +48,13 @@ export class CollectorLogService {
         return knex("collector_log");
     }
 
-    static async getAllForService(serviceName: string): Promise<CollectorLog[]> {
+    static async getAllForService(serviceName: string, status?: CollectorStatus[]): Promise<CollectorLog[]> {
         let knex = getDatabaseConnection();
-        return knex("collector_log").where({ "service_name": serviceName })
+
+        if (!status)
+            status = [CollectorStatus.COLLECTED];
+
+        return knex("collector_log").where({ "service_name": serviceName }).whereIn("status", status);
     }
 
     static async getFilesFor(log: CollectorLog): Promise<CollectedFile[]> {
@@ -55,7 +72,6 @@ export class CollectorLogService {
                 }
 
                 if (parsed.data && parsed.type == CollectedFileType.BODY) {
-
                     var data = JSON.parse(parsed.data.toString());
                     parsed.data = data;
                 }

@@ -1,12 +1,13 @@
 import { CollectorLog, CollectorStatus } from "../data/models";
 import express, { Request, Response } from "express";
-import { writeEncryptedFile, readEncryptedFile, createDirectory } from "../utils/fileUtils";
+import { writeEncryptedFile, createDirectory } from "../utils/fileUtils";
 import { CollectorLogService } from "../data/services/collector-log-service";
 import { FILE_PATH } from "../config";
 import { join } from "path";
-import { existsSync, writeFile, writeFileSync } from "fs";
+import { existsSync } from "fs";
 import { v4 as uuidv4 } from "uuid";
-import { CollectedFile, CollectedFileType } from "../data/models/collected-file";
+import { CollectedFileType } from "../data/models/collected-file";
+import { NODE_ENV } from "../config";
 
 export const collector = express.Router();
 
@@ -83,9 +84,6 @@ collector.post("/:service_name", async (req: Request, res: Response) => {
     createDirectory(dataPath);
 
     fileArray.forEach(async function (fileData) {
-
-        console.log(dataPath, fileData.encrypted_name)
-
         let filePath = join(dataPath, fileData.encrypted_name as string);
         var fileIndex = 1;
 
@@ -100,21 +98,24 @@ collector.post("/:service_name", async (req: Request, res: Response) => {
                 console.log("Encrypted file written: ", val);
             })
             .catch(err => {
-                console.log("THE ERROR MESSAGE", err);
+                console.error("THE ERROR MESSAGE", err);
             })
     });
 
     res.status(200).send("Recieved");
 });
 
-collector.get("/:service_name/:id", async (req: Request, res: Response) => {
-    var row = await CollectorLogService.getOne(parseInt(req.params.id));
+// only allow pull the submission when running in development
+// this is used for testing only
+if (NODE_ENV === "development") {
+    collector.get("/:service_name/:id", async (req: Request, res: Response) => {
+        var row = await CollectorLogService.getOne(parseInt(req.params.id));
 
-    if (row) {
-        let files = await CollectorLogService.getFilesFor(row).then(res => res);
-        console.log("FIELS", files);
-        ///CollectorLogService.updateStatus(row, CollectorStatus.PROCESSED);
-    }
+        if (row) {
+            let files = await CollectorLogService.getFilesFor(row).then(res => res);
+            console.log("TESTING FILES:", files);
+        }
 
-    res.send(row)
-});
+        res.send(row)
+    });
+}
