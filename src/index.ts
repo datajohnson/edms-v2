@@ -6,6 +6,7 @@ import { routeBuilder } from "./routes";
 import * as config from './config';
 import { doHealthCheck } from "./utils/healthCheck";
 import { runMigrations } from "./data";
+import { startScheduler } from "./jobs/schedule";
 
 // get the database to the latest state
 runMigrations();
@@ -22,6 +23,9 @@ app.use(cors({
   optionsSuccessStatus: 200,
   credentials: true
 }));
+
+// use the node-schedule module and load jobs into it
+startScheduler();
 
 app.get("/api/healthCheck", (req: Request, res: Response) => {
   doHealthCheck(res);
