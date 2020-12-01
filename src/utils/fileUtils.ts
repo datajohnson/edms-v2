@@ -1,7 +1,8 @@
-import { createWriteStream, createReadStream, existsSync, mkdirSync } from "fs";
+import { createWriteStream, createReadStream, existsSync, mkdirSync, readdirSync, lstatSync, unlinkSync, rmdirSync } from "fs";
 import { createCipheriv, createDecipheriv } from "crypto";
-import { Readable, Writable } from "stream";
+import { Readable } from "stream";
 import { ENCRYPTION_KEY, ENCRYPTION_IV } from "../config";
+import { join } from "path";
 
 const algorithm = 'aes-256-ctr';
 const key = ENCRYPTION_KEY;
@@ -9,14 +10,25 @@ const iv = Buffer.from(ENCRYPTION_IV).slice(0, 16);
 
 
 export function createDirectory(path: string): void {
-    console.log("TRYING TO CREATE DIRECTORY: " + path)
     mkdirSync(path, { recursive: true });
+}
+
+export function deleteDirectory(path: string): void {
+    if (existsSync(path)) {
+        readdirSync(path).forEach((file, index) => {
+            const curPath = join(path, file);
+            if (lstatSync(curPath).isDirectory()) { // recurse
+                deleteDirectory(curPath);
+            } else { // delete file
+                unlinkSync(curPath);
+            }
+        });
+        rmdirSync(path);
+    }
 }
 
 export async function writeEncryptedFile(filename: string, content: Buffer): Promise<string> {
     let cipher = createCipheriv(algorithm, Buffer.from(key), iv);
-
-    console.log(filename, content)
 
     return new Promise(async (resolve, reject) => {
         let reader = new Readable();
@@ -24,13 +36,10 @@ export async function writeEncryptedFile(filename: string, content: Buffer): Pro
         reader.push(content);
         reader.push(null);
 
-        console.log("TRYING TO WRITE LOG TO : ", filename)
-
         let output = createWriteStream(filename);
 
         await reader.pipe(cipher).pipe(output)
             .on("finish", () => {
-                console.log("IN FINISH")
                 resolve(filename);
             })
             .on("error", () => {
@@ -48,9 +57,6 @@ export async function readEncryptedFile(filename: string): Promise<Buffer> {
 
         let decipher = createDecipheriv(algorithm, Buffer.from(key), iv);
         let input = createReadStream(filename);
-        let output = createWriteStream(filename + ".new.txt");
-        let writer = new Writable();
-
         let buff = new Array<Uint8Array>();
 
         input.pipe(decipher)
