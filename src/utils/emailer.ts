@@ -5,11 +5,16 @@ import { Attachment } from "nodemailer/lib/mailer";
 import { EMAIL_USER, EMAIL_PASS, EMAIL_HOST } from "../config"
 
 const transporter = createTransport({
-    service: EMAIL_HOST,
-    secure: true,
+    host: EMAIL_HOST,
+    secure: false,
+    port: 587,
     auth: {
         user: EMAIL_USER,
         pass: EMAIL_PASS
+    },
+    requireTLS: true,
+    tls: {
+        ciphers: 'SSLv3'
     }
 });
 
@@ -28,18 +33,14 @@ export class Emailer {
                     contentType: attach.mimetype
                 })
             }
-        })
+        });
 
-        transporter.sendMail({
+        return transporter.sendMail({
             to: recipients,
             from: EMAIL_USER,
             subject: subject,
             html: body,
             attachments: attachArray
-        }).then(res => {
-            console.log("EMAIL response:", res);
-        }).catch(res => {
-            console.log("EMAIL error:", res);
         });
     }
 }

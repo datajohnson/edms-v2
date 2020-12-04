@@ -10,6 +10,18 @@ services:
     volumes:
       - pg-data:/var/lib/postgresql/data
       - ./db/secrets/:/run/secrets
+  api:
+    build:
+      context: .
+    ports: 
+      - 3000:3000
+    volumes:
+      - enc-data:/home/node/app/files
+    environment:
+      - NODE_ENV=docker
+    depends_on:
+      - db
 
 volumes:
   pg-data:
+  enc-data:

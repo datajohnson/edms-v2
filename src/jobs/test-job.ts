@@ -2,7 +2,7 @@ import { Emailer } from "../utils/emailer";
 import { CollectorLogService } from "../data/services/collector-log-service";
 import { CollectedFileType } from "../data/models/collected-file";
 
-const SCHEDULE = "*/5 * * * *"; // every 5 minutes
+const SCHEDULE = "*/2 * * * *"; // every 2 minutes
 const SERVICE_NAME = "magic";
 const JOB_NAME = "Test Job"
 
@@ -29,8 +29,13 @@ export class TestJob {
                 }
             })
 
-            await Emailer.sendEmail(new Array<string>("michael@icefoganalytics.com"), "SENT FROM COLLECTOR", body, files);
-            await CollectorLogService.completeProcessing(submission);
+            await Emailer.sendEmail(new Array<string>("michael@icefoganalytics.com"), "SENT FROM COLLECTOR", body, files)
+                .then(res => {
+                    //console.log("EMAIL response:", res);
+                    CollectorLogService.completeProcessing(submission);
+                }).catch(res => {
+                    console.log("EMAIL error:", res);
+                });
         });
 
         console.log(`|---${this.name} completed --------------------`)

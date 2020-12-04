@@ -8,6 +8,9 @@ switch (process.env.NODE_ENV) {
   case "production":
     path = `.env.production`;
     break;
+    case "docker":
+      path = `.env.docker`;
+      break;
   default:
     path = `.env.development`;
 }
