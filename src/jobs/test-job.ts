@@ -1,6 +1,7 @@
 import { Emailer } from "../utils/emailer";
 import { CollectorLogService } from "../data/services/collector-log-service";
 import { CollectedFileType } from "../data/models/collected-file";
+import { EMAIL_USER } from "../config"
 
 const SCHEDULE = "*/2 * * * *"; // every 2 minutes
 const SERVICE_NAME = "magic";
@@ -29,7 +30,7 @@ export class TestJob {
                 }
             })
 
-            await Emailer.sendEmail(new Array<string>("michael@icefoganalytics.com"), "SENT FROM COLLECTOR", body, files)
+            await Emailer.sendEmail(new Array<string>(EMAIL_USER), "SENT FROM COLLECTOR", body, files)
                 .then(res => {
                     //console.log("EMAIL response:", res);
                     CollectorLogService.completeProcessing(submission);
