@@ -13,7 +13,7 @@ runMigrations();
 
 const app = express();
 app.use(express.json()) // for parsing application/json
-app.use(express.urlencoded({ extended: true })) // for parsing application/x-www-form-urlencoded
+app.use(express.urlencoded({ extended: true, limit: "250mb" })) // for parsing application/x-www-form-urlencoded
 app.use(fileupload());
 app.use(helmet());
 
