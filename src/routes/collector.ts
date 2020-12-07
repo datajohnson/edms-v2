@@ -107,7 +107,7 @@ collector.post("/:service_name", async (req: Request, res: Response) => {
 
 // only allow pull the submission when running in development
 // this is used for testing only
-if (NODE_ENV === "development") {
+if (NODE_ENV === "development" || NODE_ENV === "docker") {
     collector.get("/:service_name/:id", async (req: Request, res: Response) => {
         var row = await CollectorLogService.getOne(parseInt(req.params.id));
 
