@@ -2,7 +2,7 @@
 import { CollectedFile, CollectedFileType } from "../data/models/collected-file";
 import { createTransport } from "nodemailer";
 import { Attachment } from "nodemailer/lib/mailer";
-import { EMAIL_USER, EMAIL_PASS, EMAIL_HOST } from "../config"
+import { EMAIL_USER, EMAIL_PASS, EMAIL_HOST, EMAIL_FROM } from "../config"
 
 const transporter = createTransport({
     host: EMAIL_HOST,
@@ -37,7 +37,7 @@ export class Emailer {
 
         return transporter.sendMail({
             to: recipients,
-            from: EMAIL_USER,
+            from: EMAIL_FROM,
             subject: subject,
             html: body,
             attachments: attachArray

@@ -28,6 +28,7 @@ export const DB_PASS = process.env.DB_PASS || "password";
 export const DB_HOST = process.env.DB_HOST || "localhost";
 export const DB_PORT = process.env.DB_PORT || "5432";
 
+export const EMAIL_FROM = process.env.EMAIL_FROM || "";
 export const EMAIL_HOST = process.env.EMAIL_HOST || "";
 export const EMAIL_USER = process.env.EMAIL_USER || "";
 export const EMAIL_PASS = process.env.EMAIL_PASS || "";
