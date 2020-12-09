@@ -1,15 +1,15 @@
-
 import { scheduleJob } from "node-schedule";
-import { TestJob } from "./test-job";
-
+import { TestJob, SCHEDULE, JOB_NAME } from "./test-job";
 
 export function startScheduler() {
-    var test = new TestJob();
 
     console.log("|------------------------------------------")
     console.log("|- Starting the scheduler!");
-    console.log("|-- Adding job: " + test.name);
+    console.log("|-- Adding job: " + JOB_NAME);
     console.log("|------------------------------------------")
 
-    scheduleJob(test.name, test.jobSchedule, test.run);
+    scheduleJob(SCHEDULE, (fireDate) => {
+        let t2 = new TestJob()
+        t2.run(fireDate);        
+    });
 }

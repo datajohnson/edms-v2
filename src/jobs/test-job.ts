@@ -1,11 +1,13 @@
 import { Emailer } from "../utils/emailer";
 import { CollectorLogService } from "../data/services/collector-log-service";
 import { CollectedFileType } from "../data/models/collected-file";
-import { EMAIL_USER } from "../config"
 
-const SCHEDULE = "*/2 * * * *"; // every 2 minutes
+export const SCHEDULE = "*/1 * * * *"; // every 2 minutes
 const SERVICE_NAME = "magic";
-const JOB_NAME = "Test Job"
+export const JOB_NAME = "Test Job"
+const RECIPIENT = "info@icefoganalytics.com";
+
+const service = new CollectorLogService();
 
 export class TestJob {
     name = JOB_NAME;
@@ -15,13 +17,14 @@ export class TestJob {
         console.log(`|------------------------------------------`);;
         console.log(`|--- Running ${this.name} @ ${fireDate}`);
 
-        let submissions = await CollectorLogService.getAllForService(SERVICE_NAME);
+        let submissions = await service.getAllForService(SERVICE_NAME);
+
         console.log(`|--- ${this.name} found ${submissions.length} unprocessed submissions`)
 
         // this just sends a simple emails with the request body in the body and attachments with it
         // after it processes each submission, it gets marked as 'processed' and the files are deleted
         submissions.forEach(async (submission) => {
-            let files = await CollectorLogService.getFilesFor(submission).then(res => res);
+            let files = await service.getFilesFor(submission).then(res => res);
             let body = "";
 
             files.forEach(file => {
@@ -30,10 +33,10 @@ export class TestJob {
                 }
             })
 
-            await Emailer.sendEmail(new Array<string>(EMAIL_USER), "SENT FROM COLLECTOR", body, files)
+            await Emailer.sendEmail(new Array<string>(RECIPIENT), "SENT FROM COLLECTOR", body, files)
                 .then(res => {
                     //console.log("EMAIL response:", res);
-                    CollectorLogService.completeProcessing(submission);
+                    service.completeProcessing(submission);
                 }).catch(res => {
                     console.log("EMAIL error:", res);
                 });

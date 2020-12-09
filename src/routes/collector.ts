@@ -41,8 +41,8 @@ collector.post("/:service_name", async (req: Request, res: Response) => {
     }
 
     if (req.files) {
-        for (var attributename in req.files) {
-            var file = req.files[attributename];
+        for (let attributename in req.files) {
+            let file = req.files[attributename];
 
             if (Array.isArray(file)) {
 
@@ -78,14 +78,15 @@ collector.post("/:service_name", async (req: Request, res: Response) => {
         }
     }
 
-    let newRowId = await CollectorLogService.save(log);
+    let service = new CollectorLogService();
+    let newRowId = await service.save(log);
     let dataPath = join(FILE_PATH, log.service_name, newRowId.toString());
 
     createDirectory(dataPath);
 
     fileArray.forEach(async function (fileData) {
         let filePath = join(dataPath, fileData.encrypted_name as string);
-        var fileIndex = 1;
+        let fileIndex = 1;
 
         // just in case a file name collision (which should never happen)
         while (existsSync(filePath)) {
@@ -109,10 +110,11 @@ collector.post("/:service_name", async (req: Request, res: Response) => {
 // this is used for testing only
 if (NODE_ENV === "development" || NODE_ENV === "docker") {
     collector.get("/:service_name/:id", async (req: Request, res: Response) => {
-        var row = await CollectorLogService.getOne(parseInt(req.params.id));
+        let service = new CollectorLogService();
+        let row = await service.getOne(parseInt(req.params.id));
 
         if (row) {
-            let files = await CollectorLogService.getFilesFor(row).then(res => res);
+            let files = await service.getFilesFor(row).then(res => res);
             console.log("TESTING FILES:", files);
         }
 
